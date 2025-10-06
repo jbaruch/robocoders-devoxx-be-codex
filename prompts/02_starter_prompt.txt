@@ -1,6 +1,6 @@
 Build the RGBW Control App following the specifications in #[[file:docs/requirements.md]].
 
-Follow the {methodology} defined in the steering rules.
+Follow the intent integrity chain defined in the rules.
 
 Key requirements:
 - Read and follow ALL specifications in docs/requirements.md

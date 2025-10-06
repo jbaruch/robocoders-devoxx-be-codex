@@ -1,0 +1,14 @@
+{
+  "name": "vibecoding-frontend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "axe-playwright": "^1.1.8",
+    "http-server": "^14.1.1"
+  }
+}

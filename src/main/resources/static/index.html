@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VibeCoding RGBW Controller</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main class="app-shell">
+    <header>
+        <h1>VibeCoding RGBW Controller</h1>
+        <p class="tagline">Match your Shelly Duo bulb to the mood in under two seconds.</p>
+    </header>
+
+    <section class="status" aria-live="polite">
+        <p data-testid="status-message" id="status-message">Initializing...</p>
+    </section>
+
+    <section class="controls">
+        <button id="send-button" class="primary control" type="button">Send Color</button>
+
+        <div class="auto-toggle">
+            <label class="switch-label" for="auto-toggle">Auto Mode</label>
+            <input id="auto-toggle" type="checkbox" role="switch" aria-checked="false" aria-label="Auto Mode">
+        </div>
+
+        <div class="camera-picker">
+            <label for="camera-select">Camera</label>
+            <select id="camera-select" data-testid="camera-select" class="control"></select>
+        </div>
+    </section>
+
+    <section class="preview">
+        <video id="camera-stream" playsinline muted></video>
+        <div class="color-info">
+            <div id="color-preview" data-testid="color-preview" aria-live="off"></div>
+            <div class="color-values">
+                <span id="rgb-value">RGB: --</span>
+                <span id="hex-value">HEX: --</span>
+            </div>
+        </div>
+    </section>
+
+    <div id="toast-container" role="status" aria-live="polite"></div>
+</main>
+
+<canvas id="frame-canvas" width="160" height="120" hidden></canvas>
+<img id="frame-image" alt="Captured frame" hidden>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
