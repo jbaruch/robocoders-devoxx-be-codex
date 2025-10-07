@@ -17,7 +17,8 @@
 - No Docker, databases, or additional infrastructure tooling allowed.
 
 ## Configuration
-- Bulb IP to be set through simple configuration (e.g., environment variable or property file) provided before testing.
+- Spring Boot service must bind to port 9080 for local and demo deployments.
+- Bulb simulator currently hosted at `http://localhost:8080`, overrideable via configuration or `SHELLY_BULB_HOST`.
 - Camera permissions must be handled through standard browser prompts; no advanced MediaStream constraint tuning.
 
 ## Context7 Documentation Status

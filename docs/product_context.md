@@ -20,7 +20,7 @@
 - Hard requirement to use Java 25 LTS, Spring Boot 3.5.6, Maven ≥ 3.9 on backend; vanilla HTML5 + ES2024, Color Thief 2.4.0, modern CSS on frontend.
 - Absolutely avoid out-of-scope features defined in `docs/requirements.md` (no WebSockets, databases, Docker, extra tooling, etc.).
 - All technical details must be validated via Context7 MCP prior to implementation.
-- Shelly bulb IP provided by stakeholders: 192.168.8.135 (override via configuration).
+- Bulb simulator address provided by stakeholders: http://localhost:8080 (override via configuration).
 
 ## Open Questions / Risks
 - Actual Shelly bulb IP and network reachability for demo environment.
