@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.time.Duration;
-import okio.Buffer;
+import okhttp3.HttpUrl;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -73,8 +73,17 @@ class ColorControllerIT {
 
         RecordedRequest recordedRequest = mockShellyServer.takeRequest();
         assertThat(recordedRequest).as("Shelly API should receive a command").isNotNull();
-        Buffer body = recordedRequest.getBody();
-        assertThat(body.size()).as("Dispatcher should forward non-empty payload body").isPositive();
+        assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+        HttpUrl requestUrl = recordedRequest.getRequestUrl();
+        assertThat(requestUrl).isNotNull();
+        assertThat(requestUrl.encodedPath()).isEqualTo("/color/0");
+        assertThat(requestUrl.queryParameter("red")).isEqualTo("12");
+        assertThat(requestUrl.queryParameter("green")).isEqualTo("34");
+        assertThat(requestUrl.queryParameter("blue")).isEqualTo("56");
+        assertThat(requestUrl.queryParameter("white")).isNull();
+        assertThat(requestUrl.queryParameter("transition")).isEqualTo("500");
+        assertThat(requestUrl.queryParameter("source")).isEqualTo("MANUAL");
+        assertThat(requestUrl.queryParameter("source_timestamp")).isEqualTo("2025-02-01T10:00:00Z");
     }
 
     @Test
@@ -88,6 +97,13 @@ class ColorControllerIT {
                 .content(payload))
             .andExpect(status().isFailedDependency())
             .andExpect(content().json("{\"error\":\"BULB_OFFLINE\"}", true));
+
+        RecordedRequest recordedRequest = mockShellyServer.takeRequest();
+        assertThat(recordedRequest.getMethod()).isEqualTo("GET");
+        HttpUrl requestUrl = recordedRequest.getRequestUrl();
+        assertThat(requestUrl.queryParameter("white")).isEqualTo("22");
+        assertThat(requestUrl.queryParameter("transition")).isEqualTo("700");
+        assertThat(requestUrl.queryParameter("source")).isEqualTo("AUTO");
     }
 
     private record ColorRequest(String mode, Rgbw color, Integer transitionMs, String sourceTimestamp) {}

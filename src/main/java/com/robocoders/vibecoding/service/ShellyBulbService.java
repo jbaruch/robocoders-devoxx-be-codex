@@ -2,13 +2,9 @@ package com.robocoders.vibecoding.service;
 
 import com.robocoders.vibecoding.config.ShellyProperties;
 import com.robocoders.vibecoding.domain.ColorCommand;
-import com.robocoders.vibecoding.domain.RgbwColor;
 import com.robocoders.vibecoding.service.exception.BulbDispatchException;
 import com.robocoders.vibecoding.service.exception.BulbNotConfiguredException;
 import java.net.URI;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -21,9 +17,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Service
 public class ShellyBulbService {
 
-    private static final String DEFAULT_COMMAND_PATH = "/rpc/Light/0/Set";
     private static final int DEFAULT_COMPONENT_ID = 0;
+    private static final String DEFAULT_COMMAND_PATH = "/color/" + DEFAULT_COMPONENT_ID;
     private static final int DEFAULT_BRIGHTNESS = 100;
+    private static final int DEFAULT_TRANSITION_MS = 500;
+    private static final int MIN_TRANSITION_MS = 500;
+    private static final int MAX_TRANSITION_MS = 10_800_000;
 
     private final ShellyProperties properties;
     private final RestClient restClient;
@@ -34,14 +33,11 @@ public class ShellyBulbService {
     }
 
     public void dispatch(ColorCommand command) {
-        URI endpoint = resolveEndpoint();
-        Map<String, Object> payload = buildPayload(command);
+        URI endpoint = buildCommandUri(command);
 
         try {
-            restClient.post()
+            restClient.get()
                 .uri(endpoint)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(payload)
                 .retrieve()
                 .toBodilessEntity();
         } catch (RestClientResponseException ex) {
@@ -51,7 +47,32 @@ public class ShellyBulbService {
         }
     }
 
-    private URI resolveEndpoint() {
+    private URI buildCommandUri(ColorCommand command) {
+        URI baseUri = resolveBaseUri();
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUri(baseUri);
+        if (!StringUtils.hasText(baseUri.getPath()) || "/".equals(baseUri.getPath())) {
+            builder.replacePath(DEFAULT_COMMAND_PATH);
+        }
+        builder.replaceQuery(null)
+            .queryParam("turn", "on")
+            .queryParam("brightness", DEFAULT_BRIGHTNESS)
+            .queryParam("transition", clampTransition(command.transitionMs()))
+            .queryParam("red", normalizedChannel(command.color().red()))
+            .queryParam("green", normalizedChannel(command.color().green()))
+            .queryParam("blue", normalizedChannel(command.color().blue()))
+            .queryParam("source", command.mode().name())
+            .queryParam("source_timestamp", command.sourceTimestamp());
+
+        Integer white = command.color().white();
+        if (white != null) {
+            builder.queryParam("white", normalizedChannel(white));
+        }
+
+        return builder.build(true).toUri();
+    }
+
+    private URI resolveBaseUri() {
         String configured = properties.resolvedHost()
             .orElseThrow(BulbNotConfiguredException::new);
 
@@ -60,33 +81,16 @@ public class ShellyBulbService {
             normalized = "http://" + normalized;
         }
 
-        URI baseUri = UriComponentsBuilder.fromUriString(normalized).build().toUri();
-        if (!StringUtils.hasText(baseUri.getPath()) || "/".equals(baseUri.getPath())) {
-            return UriComponentsBuilder.fromUri(baseUri)
-                .replacePath(DEFAULT_COMMAND_PATH)
-                .build(true)
-                .toUri();
-        }
-        return baseUri;
+        return UriComponentsBuilder.fromUriString(normalized).build().toUri();
     }
 
-    private Map<String, Object> buildPayload(ColorCommand command) {
-        RgbwColor color = command.color();
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("id", DEFAULT_COMPONENT_ID);
-        body.put("on", true);
-        body.put("mode", "color");
-        body.put("red", color.red());
-        body.put("green", color.green());
-        body.put("blue", color.blue());
-        if (color.white() != null) {
-            body.put("white", color.white());
-        }
-        body.put("brightness", DEFAULT_BRIGHTNESS);
-        body.put("transition_time", command.transitionMs());
-        body.put("source", command.mode().name());
-        body.put("source_timestamp", command.sourceTimestamp().toString());
-        return body;
+    private int clampTransition(int transitionMs) {
+        int value = transitionMs > 0 ? transitionMs : DEFAULT_TRANSITION_MS;
+        return Math.max(MIN_TRANSITION_MS, Math.min(value, MAX_TRANSITION_MS));
+    }
+
+    private int normalizedChannel(int channel) {
+        return Math.max(0, Math.min(channel, 255));
     }
 
     private ClientHttpRequestFactory requestFactory() {
